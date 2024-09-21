@@ -1,0 +1,14 @@
+name: Test BusyBox
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run_test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test BusyBox Commands
+        run: |
+          ./busybox
+          ./busybox ash -c 'echo $(( 1 + 1 ))'
