@@ -5,16 +5,19 @@ on:
 
 jobs:
   run_test:
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        os: [macos-latest, macos-13]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Test BusyBox Commands
         run: |
-          mv ./busybox_arm64_static ./busybox
+          mv ./busybox_$(uname -m)_static ./busybox
 
           file ./busybox
           du -h ./busybox
           otool -L ./busybox
-          
+
           ./busybox --help
           ./busybox ash -c 'echo $(( 1 + 1 ))'
