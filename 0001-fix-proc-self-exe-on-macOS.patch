@@ -1,0 +1,88 @@
+From a0fdedf7398cfab1fc1483479f3ceb638909df65 Mon Sep 17 00:00:00 2001
+From: Ookiineko <chiisaineko@protonmail.com>
+Date: Sun, 22 Sep 2024 18:34:23 +0800
+Subject: [PATCH] fix /proc/self/exe on macOS
+
+Signed-off-by: Ookiineko <chiisaineko@protonmail.com>
+---
+ include/libbb.h  |  6 ++++++
+ libbb/Kbuild.src |  1 +
+ libbb/macos.c    | 20 ++++++++++++++++++++
+ libbb/messages.c |  2 ++
+ 4 files changed, 29 insertions(+)
+ create mode 100644 libbb/macos.c
+
+diff --git a/include/libbb.h b/include/libbb.h
+index 17fb6fa..ad6ed2c 100644
+--- a/include/libbb.h
++++ b/include/libbb.h
+@@ -2404,8 +2404,14 @@ extern const char bb_path_wtmp_file[] ALIGN1;
+ extern char bb_comm[];
+ extern char bb_command_line[];
+ #else
++#ifdef __APPLE__
++const char *
++macos_get_self_exe_path (void);
++#define bb_busybox_exec_path macos_get_self_exe_path()
++#else
+ extern const char bb_busybox_exec_path[] ALIGN1;
+ #endif
++#endif
+ /* allow default system PATH to be extended via CFLAGS */
+ #ifndef BB_ADDITIONAL_PATH
+ #define BB_ADDITIONAL_PATH ""
+diff --git a/libbb/Kbuild.src b/libbb/Kbuild.src
+index c9f9bdb..400d9f4 100644
+--- a/libbb/Kbuild.src
++++ b/libbb/Kbuild.src
+@@ -10,6 +10,7 @@ lib-y:=
+ 
+ INSERT
+ 
++lib-y += macos.o
+ lib-y += appletlib.o
+ lib-y += ask_confirmation.o
+ lib-y += bb_bswap_64.o
+diff --git a/libbb/macos.c b/libbb/macos.c
+new file mode 100644
+index 0000000..7175770
+--- /dev/null
++++ b/libbb/macos.c
+@@ -0,0 +1,20 @@
++#include <mach-o/dyld.h>
++#include <assert.h>
++
++#include "libbb.h"
++
++const char *
++macos_get_self_exe_path (void)
++{
++  static char macos_self_exe_path[PATH_MAX + 1] = { 0 };
++  uint32_t macos_self_exe_path_size = sizeof (macos_self_exe_path);
++
++  if (macos_self_exe_path[0] == 0)
++    if (_NSGetExecutablePath(macos_self_exe_path,
++                             &macos_self_exe_path_size) < 0
++        || macos_self_exe_path[0] == 0)
++    abort();
++
++  return macos_self_exe_path;
++}
++
+diff --git a/libbb/messages.c b/libbb/messages.c
+index 27ba244..2838cc2 100644
+--- a/libbb/messages.c
++++ b/libbb/messages.c
+@@ -31,7 +31,9 @@ const char bb_msg_standard_output[] ALIGN1 = "standard output";
+ const char bb_hexdigits_upcase[] ALIGN1 = "0123456789ABCDEF";
+ 
+ #if !ENABLE_PLATFORM_MINGW32
++#ifndef __APPLE__
+ const char bb_busybox_exec_path[] ALIGN1 = CONFIG_BUSYBOX_EXEC_PATH;
++#endif
+ #else
+ /* Some special shell variables are placed in the environment immediately
+  * when they're exported.
+-- 
+2.45.2
+

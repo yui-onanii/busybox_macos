@@ -1,0 +1,13 @@
+diff --git a/include/platform.h b/include/platform.h
+index 5795a0c..a94e09a 100644
+--- a/include/platform.h
++++ b/include/platform.h
+@@ -537,6 +537,8 @@ typedef unsigned smalluint;
+
+ #if defined(__APPLE__)
+ # undef HAVE_STRCHRNUL
++# undef HAVE_MEMPCPY
++# undef HAVE_MEMRCHR
+ #endif
+
+ #if defined(__FreeBSD__)
